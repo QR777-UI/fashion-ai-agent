@@ -1,0 +1,25 @@
+# 敏感文件
+*.pyc
+__pycache__/
+.env
+.venv/
+API_KEY*
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# WorkBuddy 系统目录
+WorkBuddy/
+.workbuddy/
+
+# 个人文件
+我的日记.md
+求职自我介绍模板.md
+男装穿搭AI账号启动手册.md
+
+# 中间临时文件
+品类销售额对比图.png
+外套_趋势图.png
+分析报告_*.txt
+趋势报告_*.txt
