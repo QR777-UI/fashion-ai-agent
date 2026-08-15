@@ -1,0 +1,16 @@
+# docker compose 一键启动
+# 用法：docker compose up -d
+# 访问：http://localhost:8501
+
+services:
+  fashion-agent:
+    build: .
+    container_name: fashion-agent
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data        # 客户数据 + 知识库持久化
+      - ./charts:/app/charts    # 趋势图输出
+    restart: unless-stopped

@@ -1,0 +1,12 @@
+# 构建上下文排除项（不进镜像）
+.env
+__pycache__/
+*.pyc
+.git/
+.gitignore
+Dockerfile
+docker-compose.yml
+README.md
+charts/
+data/向量库/
+data/分析报告_任务.txt

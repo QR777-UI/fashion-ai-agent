@@ -1,0 +1,16 @@
+# 敏感文件
+.env
+*.pyc
+__pycache__/
+
+# 运行时产物
+charts/
+data/向量库/
+data/分析报告*.txt
+data/测试报告*.txt
+data/saved_tasks.json
+.pytest_cache/
+
+# 系统文件
+.DS_Store
+Thumbs.db
