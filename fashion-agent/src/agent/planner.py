@@ -138,6 +138,27 @@ def predict_trend(category: str, days: int = 30) -> str:
     return (f"{category}未来{days}天预测：预计总销量约 {total:.0f} 件（日均 {daily_avg:.0f} 件），"
             f"较近 3 日均量{trend}（变化 {change:+.1f}%）。{方法}。")
 
+def search_web(keyword: str, max_results: int = 5) -> str:
+    """联网搜索（DuckDuckGo 免费，无需 key）：搜索行业趋势/热点，返回标题+摘要
+    供 AI 结合本地数据分析，让报告带上真实市场动态"""
+    try:
+        from ddgs import DDGS
+        with DDGS() as ddgs:
+            results = list(ddgs.text(keyword, max_results=max_results))
+        if not results:
+            return f"未搜索到「{keyword}」相关结果"
+        lines = []
+        for i, r in enumerate(results[:max_results], 1):
+            title = r.get("title", "").strip()
+            body = r.get("body", "").strip()
+            href = r.get("href", "").strip()
+            lines.append(f"{i}. {title}\n   {body}\n   {href}")
+        logger.info(f"联网搜索「{keyword}」：返回 {len(results)} 条")
+        return "\n".join(lines)
+    except Exception as e:
+        logger.warning(f"联网搜索失败：{e}")
+        return f"联网搜索失败：{e}（请检查网络后重试）"
+
 # 工具注册表：规划器认识名字，执行器找到函数
 工具表 = {
     "get_sales": get_sales,
@@ -145,6 +166,7 @@ def predict_trend(category: str, days: int = 30) -> str:
     "get_channel_compare": get_channel_compare,
     "make_chart": make_chart,
     "predict_trend": predict_trend,
+    "search_web": search_web,
     "save_report": save_report,
 }
 
@@ -156,6 +178,7 @@ def 工具说明() -> str:
 - get_channel_compare({{"category": "外套"}}) 查品类各渠道销售额对比
 - make_chart({{"category": "外套"}})         生成品类销量趋势图
 - predict_trend({{"category": "外套", "days": 30}})  预测品类未来销量趋势（数值外推）
+- search_web({{"keyword": "2026 男装趋势", "max_results": 5}})  联网搜索行业热点/趋势（供结合分析）
 - save_report({{"文件名": "报告.txt", "内容": "..."}})  保存最终报告
 可用品类：{可用品类}"""
 
@@ -164,7 +187,7 @@ def 工具说明() -> str:
 # ============================================================
 class 任务步骤(BaseModel):
     step_number: int = Field(description="步骤序号，从1开始")
-    tool: Literal["get_sales", "get_return_rate", "get_channel_compare", "make_chart", "predict_trend", "save_report"]
+    tool: Literal["get_sales", "get_return_rate", "get_channel_compare", "make_chart", "predict_trend", "search_web", "save_report"]
     params: dict = Field(description="工具需要的参数，如 {'category': '外套'}")
     purpose: str = Field(description="这一步想得到什么")
 

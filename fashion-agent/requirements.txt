@@ -14,5 +14,8 @@ numpy==2.5.1
 chromadb==1.5.9
 fastembed==0.8.0
 
+# 联网搜索（DuckDuckGo 免费，无需 key）
+ddgs==9.14.4
+
 # 测试（开发用）
 pytest==9.1.1

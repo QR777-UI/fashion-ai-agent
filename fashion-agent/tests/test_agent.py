@@ -113,6 +113,23 @@ def test_predict_trend_bad_category():
         planner.predict_trend("不存在的品类")
 
 
+# ============ 联网搜索 ============
+def test_search_web_registered():
+    assert "search_web" in planner.工具表
+
+
+def test_search_web_network_error(monkeypatch):
+    """模拟断网：ddgs 抛异常 → 返回失败提示（不依赖真实网络）"""
+    class FakeDDGS:
+        def __enter__(self):
+            raise RuntimeError("模拟断网")
+        def __exit__(self, *a):
+            pass
+    monkeypatch.setattr("ddgs.DDGS", FakeDDGS)
+    r = planner.search_web("测试关键词")
+    assert "失败" in r
+
+
 # ============ 调度器全流程（mock） ============
 def test_dispatch_mock():
     """完整工作流：规划(mock) → 执行(真实工具) → 汇总(mock) → 保存"""
