@@ -98,6 +98,21 @@ def test_executor_bad_param():
     assert "执行失败" in r
 
 
+# ============ 趋势预测 ============
+def test_predict_trend_ok():
+    planner.load_data()
+    r = planner.predict_trend("外套", 30)
+    assert "预测" in r
+    assert "件" in r
+    assert ("趋势" in r) or ("外推" in r) or ("参考值" in r)
+
+
+def test_predict_trend_bad_category():
+    planner.load_data()
+    with pytest.raises(ValueError):
+        planner.predict_trend("不存在的品类")
+
+
 # ============ 调度器全流程（mock） ============
 def test_dispatch_mock():
     """完整工作流：规划(mock) → 执行(真实工具) → 汇总(mock) → 保存"""

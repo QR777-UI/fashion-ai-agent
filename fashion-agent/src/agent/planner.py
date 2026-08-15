@@ -18,6 +18,7 @@ import json
 import logging
 import os
 from typing import Literal, List
+import numpy as np
 import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
@@ -111,12 +112,39 @@ def save_report(文件名: str, 内容: str) -> str:
         f.write(内容)
     return f"报告已保存: {文件名}"
 
+def predict_trend(category: str, days: int = 30) -> str:
+    """预测品类未来销量趋势（简单版：移动平均 + 线性外推）
+    数据足够（≥7天）：最近 30 天线性拟合外推；数据有限（3-6天）：按近 3 日均值常数外推（参考值）"""
+    _check(category)
+    data = df[df['品类'] == category].groupby('日期')['销量'].sum().sort_index()
+    n = len(data)
+    if n < 3:
+        return f"{category}历史数据不足（仅 {n} 天），无法预测"
+    if n >= 7:
+        recent = data.tail(30)
+        x = np.arange(len(recent))
+        slope, intercept = np.polyfit(x, recent.values, 1)   # 线性拟合（斜率=日增/减量）
+        forecast = [max(0.0, slope * (len(recent) + i) + intercept) for i in range(1, days + 1)]
+        方法 = f"基于近 {len(recent)} 天销量线性趋势外推"
+    else:
+        base = float(data.tail(3).mean())                    # 数据有限：按近 3 日均量外推
+        forecast = [max(0.0, base)] * days
+        方法 = f"历史数据有限（仅 {n} 天），按近 3 日均量 {base:.0f} 件常数外推（参考值）"
+    total = sum(forecast)
+    daily_avg = total / days
+    last_avg = float(data.tail(3).mean())
+    change = (daily_avg - last_avg) / last_avg * 100 if last_avg > 0 else 0
+    trend = "上涨" if change > 5 else ("下跌" if change < -5 else "平稳")
+    return (f"{category}未来{days}天预测：预计总销量约 {total:.0f} 件（日均 {daily_avg:.0f} 件），"
+            f"较近 3 日均量{trend}（变化 {change:+.1f}%）。{方法}。")
+
 # 工具注册表：规划器认识名字，执行器找到函数
 工具表 = {
     "get_sales": get_sales,
     "get_return_rate": get_return_rate,
     "get_channel_compare": get_channel_compare,
     "make_chart": make_chart,
+    "predict_trend": predict_trend,
     "save_report": save_report,
 }
 
@@ -127,6 +155,7 @@ def 工具说明() -> str:
 - get_return_rate({{"category": "外套"}})    查品类退货率
 - get_channel_compare({{"category": "外套"}}) 查品类各渠道销售额对比
 - make_chart({{"category": "外套"}})         生成品类销量趋势图
+- predict_trend({{"category": "外套", "days": 30}})  预测品类未来销量趋势（数值外推）
 - save_report({{"文件名": "报告.txt", "内容": "..."}})  保存最终报告
 可用品类：{可用品类}"""
 
@@ -135,7 +164,7 @@ def 工具说明() -> str:
 # ============================================================
 class 任务步骤(BaseModel):
     step_number: int = Field(description="步骤序号，从1开始")
-    tool: Literal["get_sales", "get_return_rate", "get_channel_compare", "make_chart", "save_report"]
+    tool: Literal["get_sales", "get_return_rate", "get_channel_compare", "make_chart", "predict_trend", "save_report"]
     params: dict = Field(description="工具需要的参数，如 {'category': '外套'}")
     purpose: str = Field(description="这一步想得到什么")
 
