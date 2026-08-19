@@ -72,6 +72,21 @@ def run_task(user_task: str, show_process: bool = False):
     st.markdown(result["报告"])
     st.success(result["保存结果"])
 
+    evaluation = result["评测"]
+    score_col, status_col, trace_col = st.columns(3)
+    score_col.metric("AI 评测分", f"{evaluation['score']}/100")
+    status_col.metric("验收状态", "通过" if evaluation["passed"] else "待复核")
+    trace_col.metric("运行 ID", result["运行ID"][:8])
+    with st.expander("🔎 证据链与评测明细"):
+        st.json({
+            "运行ID": result["运行ID"],
+            "数据源": result["数据源"],
+            "评测": evaluation,
+            "评测文件": result["评测文件"],
+            "步骤记录": result["执行记录"],
+            "追溯文件": result["追溯文件"],
+        })
+
     st.download_button(
         label="下载分析报告 (txt)",
         data=result["报告"],

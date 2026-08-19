@@ -9,6 +9,8 @@ tests/test_agent.py —— 服装 Agent 自动化测试（pytest）
 
 import json
 import os
+import sys
+import types
 from unittest.mock import patch, MagicMock
 
 import pytest
@@ -116,6 +118,28 @@ def test_predict_trend_bad_category():
 # ============ 联网搜索 ============
 def test_search_web_registered():
     assert "search_web" in planner.工具表
+
+
+def test_search_knowledge_registered():
+    assert "search_knowledge" in planner.工具表
+
+
+def test_search_knowledge_uses_rag(monkeypatch):
+    """主 Agent 调用的是 RAG 的纯检索接口，不额外调用一次大模型回答。"""
+    fake_module = types.ModuleType("src.rag.vector_rag")
+    fake_module.检索知识 = lambda query, top_k=3: f"命中:{query};top_k={top_k}"
+    monkeypatch.setitem(sys.modules, "src.rag.vector_rag", fake_module)
+    result = planner.search_knowledge("外套趋势", top_k=2)
+    assert result == "命中:外套趋势;top_k=2"
+
+
+def test_search_knowledge_failure(monkeypatch):
+    fake_module = types.ModuleType("src.rag.vector_rag")
+    def fail(*args, **kwargs):
+        raise RuntimeError("模拟向量库异常")
+    fake_module.检索知识 = fail
+    monkeypatch.setitem(sys.modules, "src.rag.vector_rag", fake_module)
+    assert "知识库检索失败" in planner.search_knowledge("外套趋势")
 
 
 def test_search_web_network_error(monkeypatch):

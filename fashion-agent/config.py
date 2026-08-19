@@ -18,6 +18,8 @@ DATA_FILE = os.path.join(BASE_DIR, "data", "模拟企业数据.csv")   # 默认�
 KNOWLEDGE_FILE = os.path.join(BASE_DIR, "data", "服装知识库.txt") # RAG 知识书
 CHART_DIR = os.path.join(BASE_DIR, "charts")                      # 趋势图输出目录
 REPORT_FILE = os.path.join(BASE_DIR, "data", "分析报告_任务.txt") # 报告保存位置
+TRACE_DIR = os.path.join(BASE_DIR, "data", "traces")              # 每次任务的审计记录
+EVAL_DIR = os.path.join(BASE_DIR, "data", "evaluations")          # AI 评测结果
 
 # ============ 运行参数 ============
 MAX_RETRY = 3        # 规划器最多重试次数
@@ -25,3 +27,5 @@ TEMPERATURE = 0.3    # 规划温度（低=稳定）
 
 # 启动时确保输出目录存在
 os.makedirs(CHART_DIR, exist_ok=True)
+os.makedirs(TRACE_DIR, exist_ok=True)
+os.makedirs(EVAL_DIR, exist_ok=True)

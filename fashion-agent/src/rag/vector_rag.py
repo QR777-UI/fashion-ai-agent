@@ -9,7 +9,7 @@ src/rag/vector_rag.py —— 向量数据库版 RAG（正式版模块）
 
 工程化改造（2026-08-15）：
   知识库路径 / 向量库路径 / 密钥 全部走 config.py，不硬编码。
-  对外暴露 RAG回答(问题) 供界面/Agent 调用。
+  对外暴露 检索知识(问题) 与 RAG回答(问题) 供界面/Agent 调用。
 
 运行：cd fashion-agent && python -m src.rag.vector_rag（自由提问演示）
 """
@@ -39,7 +39,7 @@ def 切块(知识库文件):
     return [b.strip() for b in blocks if b.strip()]
 
 知识块列表 = 切块(config.KNOWLEDGE_FILE)
-print(f"📚 知识库共 {len(知识块列表)} 块：{config.KNOWLEDGE_FILE}")
+print(f"知识库共 {len(知识块列表)} 块：{config.KNOWLEDGE_FILE}")
 
 # ============================================================
 # ② 两种嵌入函数
@@ -94,18 +94,18 @@ class 语义嵌入(EmbeddingFunction):
 )
 
 if 语义就绪:
-    print("✅ 使用语义嵌入 bge-small-zh（按意思找）")
+    print("使用语义嵌入 bge-small-zh（按意思找）")
     嵌入模型 = 语义嵌入()
     嵌入类型 = "semantic"
 else:
-    print("⚠️ 语义模型未下载，暂时用手写嵌入（按字找）；下载后自动切换语义嵌入")
+    print("语义模型未下载，暂时用手写嵌入（按字找）；下载后自动切换语义嵌入")
     嵌入模型 = 手写嵌入(知识块列表)
     嵌入类型 = "lexical"
 
 # ============================================================
 # ③ 向量数据库（Chroma）
 # ============================================================
-print("⏳ 连接向量数据库...")
+print("连接向量数据库...")
 db = chromadb.PersistentClient(path=os.path.join(config.BASE_DIR, "data", "向量库"))
 集合 = db.get_or_create_collection(f"fashion_kb_{嵌入类型}", embedding_function=嵌入模型)
 
@@ -157,16 +157,39 @@ def 获取知识库概况() -> dict:
     return {"块数": len(知识块列表), "库内条数": 集合.count()}
 
 # 启动时同步一次（把 config.KNOWLEDGE_FILE 的最新内容对齐到向量库）
-print("🔄 同步知识库...")
+print("同步知识库...")
 _同步结果 = 同步知识库()
-print(f"✅ 同步完成：新增 {_同步结果['新增']} 块，删除 {_同步结果['删除']} 块，当前库内 {集合.count()} 条")
+print(f"同步完成：新增 {_同步结果['新增']} 块，删除 {_同步结果['删除']} 块，当前库内 {集合.count()} 条")
 
 # ============================================================
 # ⑤ 检索 + 回答（对外接口）
 # ============================================================
+def _检索文档(问题: str, top_k: int = 3) -> list[str]:
+    """只做向量检索，不调用大模型。主 Agent 用它获取可追溯的原始知识。"""
+    问题 = str(问题).strip()
+    if not 问题:
+        raise ValueError("检索问题不能为空")
+    if top_k < 1:
+        raise ValueError("top_k 必须大于等于 1")
+    count = 集合.count()
+    if count == 0:
+        return []
+    hits = 集合.query(query_texts=[问题], n_results=min(top_k, count))
+    return hits.get("documents", [[]])[0]
+
+
+def 检索知识(问题: str, top_k: int = 3) -> str:
+    """返回知识库中最相关的原文片段，供 Agent 与销售数据一起汇总。"""
+    docs = _检索文档(问题, top_k)
+    if not docs:
+        return f"知识库中未检索到与「{问题}」相关的资料"
+    return "\n\n".join(f"[知识库资料{i}]\n{doc}" for i, doc in enumerate(docs, 1))
+
+
 def RAG回答(问题, top_k=2):
-    hits = 集合.query(query_texts=[问题], n_results=top_k)
-    docs = hits["documents"][0]
+    docs = _检索文档(问题, top_k)
+    if not docs:
+        return "知识库中没有可用于回答该问题的资料"
     参考材料 = "\n\n".join(f"[资料{i+1}]\n{d}" for i, d in enumerate(docs))
     res = client.chat.completions.create(
         model=config.MODEL_NAME,
@@ -182,14 +205,14 @@ def RAG回答(问题, top_k=2):
 # ============================================================
 if __name__ == "__main__":
     print("\n" + "=" * 55)
-    print("🎮 自由提问环节（输入 exit 退出）")
+    print("自由提问环节（输入 exit 退出）")
     print("=" * 55)
     while True:
         q = input("\n你的问题 > ").strip()
         if q.lower() in ("exit", "quit", "退出"):
-            print("再见！👋")
+            print("再见！")
             break
         if not q:
             continue
-        print("\n🔍 向量检索中...")
+        print("\n向量检索中...")
         print(RAG回答(q))

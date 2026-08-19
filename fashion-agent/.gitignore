@@ -9,6 +9,8 @@ data/向量库/
 data/分析报告*.txt
 data/测试报告*.txt
 data/saved_tasks.json
+data/traces/
+data/evaluations/
 .pytest_cache/
 
 # 系统文件
