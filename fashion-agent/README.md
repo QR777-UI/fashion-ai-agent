@@ -119,6 +119,8 @@ Agent 会根据任务自动决定调用哪些工具，而不是依赖一套写�
 
 ## 快速开始
 
+当前工程化版本位于仓库的 `fashion-agent/` 子目录；仓库根目录中的其他脚本是项目早期的探索原型。建议从该子目录启动和二次开发。
+
 ### 环境要求
 
 - Python 3.11 或更高版本。
@@ -129,7 +131,7 @@ Agent 会根据任务自动决定调用哪些工具，而不是依赖一套写�
 
 ```bash
 git clone https://github.com/QR777-UI/fashion-ai-agent.git
-cd fashion-ai-agent
+cd fashion-ai-agent/fashion-agent
 
 python -m venv .venv
 ```
@@ -233,7 +235,7 @@ python -m pytest tests -q
 ## 项目结构
 
 ```text
-fashion-ai-agent/
+fashion-ai-agent/fashion-agent/
 ├── main.py                       # Streamlit 一键启动入口
 ├── config.py                     # 模型、路径和运行参数配置
 ├── requirements.txt              # Python 依赖
